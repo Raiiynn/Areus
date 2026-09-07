@@ -45,19 +45,21 @@ export async function POST(request: Request) {
     return new NextResponse('invalid request signature', { status: 401 })
   }
 
-  // Configuration is checked after verification, never before: an unconfigured
-  // deployment has an empty public key, so nothing can verify anyway, and
-  // answering differently would let an unauthenticated caller probe whether
-  // the integration is switched on.
-  if (!isDiscordConfigured()) {
-    return new NextResponse('not configured', { status: 503 })
-  }
-
   let interaction: DiscordInteraction
   try {
     interaction = JSON.parse(rawBody.toString('utf8')) as DiscordInteraction
   } catch {
     return new NextResponse('malformed body', { status: 400 })
+  }
+
+  // Discord sends a PING while validating the Interactions Endpoint URL.
+  // Handle it before checking the optional outbound bot configuration.
+  if (interaction.type === 1) {
+    return NextResponse.json({ type: 1 })
+  }
+
+  if (!isDiscordConfigured()) {
+    return new NextResponse('not configured', { status: 503 })
   }
 
   try {
