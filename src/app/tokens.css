@@ -1,0 +1,146 @@
+/**
+ * Design tokens — the implementation of MASTER.md.
+ *
+ * Every value here traces to a decision recorded in MASTER.md. Nothing in the
+ * codebase may introduce a colour, size, radius or duration that does not come
+ * from this file.
+ */
+
+:root {
+  /* Surfaces. Violet-black rather than pure black: on an OLED panel pure black
+     makes hairline borders disappear and the table structure collapses. The
+     violet cast is taken from the shadowed indigo of the logo's blade, so the
+     mark sits on the page instead of on top of it. */
+  --surface-base: #0a0a12;
+  --surface-raised: #13131f;
+  --surface-overlay: #1a1a2a;
+  --surface-sunken: #07070d;
+
+  --line-hairline: #222232;
+  --line-strong: #2f2f45;
+
+  --text-primary: #e9e8f4;
+  --text-secondary: #a3a2b9;
+  --text-muted: #8482a0;
+  --text-inverse: #0a0a12;
+
+  /* The blade periwinkle — the logo's dominant hue and the brand accent.
+     Interactive emphasis and rank position; never decoration. */
+  --accent: #8b93ee;
+  --accent-strong: #a6acf6;
+  --accent-dim: #20213f;
+
+  /* The hilt gem. Achievement only: top tier, podium first place. One colour
+     the page uses sparingly enough that it still means something. */
+  --gold: #e9c15c;
+  --gold-strong: #f3d074;
+  --gold-dim: #33290f;
+
+  --positive: #4fb489;
+  --negative: #d95a67;
+  --warning: #d9a44e;
+  --info: #6fa3cf;
+
+  /* Tier ramp, cold to hot as rank rises. Always paired with the letter so
+     tier never depends on colour alone. */
+  --tier-s: #e9c15c;
+  --tier-a: #c489d0;
+  --tier-b: #6fa3cf;
+  --tier-c: #55a396;
+  --tier-d: #8a8a9e;
+
+  /* Gamemode accents, deliberately muted: nine saturated hues on one page is
+     the generic-dashboard failure mode. Hue spacing is unchanged from the
+     original ramp; each one is pulled toward the logo's cooler cast. */
+  --mode-sword: #8f9cd0;
+  --mode-axe: #c4926a;
+  --mode-crystal: #b291d8;
+  --mode-uhc: #cc8f9e;
+  --mode-mace: #9a90dc;
+  --mode-pot: #86c2ab;
+  --mode-smp: #c4b894;
+  --mode-tnt: #cc9a8c;
+  --mode-spear: #86c0c8;
+  --mode-default: #8f9cd0;
+
+  /* Type */
+  --font-display: 'Barlow Condensed', 'Oswald', system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+
+  /* Fluid between 375px and 1440px, so no step needs a breakpoint. */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: clamp(1.25rem, 1.18rem + 0.3vw, 1.375rem);
+  --text-2xl: clamp(1.5rem, 1.35rem + 0.64vw, 1.75rem);
+  --text-3xl: clamp(1.875rem, 1.6rem + 1.17vw, 2.375rem);
+  --text-4xl: clamp(2.375rem, 1.9rem + 2.03vw, 3.25rem);
+  --text-hero: clamp(3.25rem, 1.6rem + 7vw, 6.5rem);
+
+  /* Spacing, 4px base */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-full: 9999px;
+
+  /* Structure comes from hairline rules, not shadow. Two steps only. */
+  --elevation-0: none;
+  --elevation-1: 0 4px 16px -4px rgb(0 0 0 / 0.6);
+  --elevation-2: 0 16px 48px -12px rgb(0 0 0 / 0.75);
+
+  --duration-instant: 120ms;
+  --duration-fast: 180ms;
+  --duration-base: 300ms;
+  --duration-slow: 400ms;
+
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --stagger: 40ms;
+
+  --width-content: 75rem;
+  --width-prose: 45rem;
+}
+
+/**
+ * Reduced motion.
+ *
+ * Durations collapse to near-zero. Content, navigation and every piece of
+ * information stay fully available — nothing essential is carried by animation
+ * alone (FULL_BUILD §365).
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0.01ms;
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+    --stagger: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
