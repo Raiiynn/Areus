@@ -1,0 +1,374 @@
+// AREUS — competitive Minecraft PvP ranking platform.
+//
+// PostgreSQL is used for both deployment and local development so the runtime
+// database matches Vercel production. The schema avoids raw SQL and
+// provider-specific types.
+//
+// Status and role columns remain String because their permitted values are
+// application-owned and live in src/domain/constants.ts. They are enforced by
+// Zod at every boundary. Do not compare these fields against string literals in
+// application code — import the constants.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id String @id @default(cuid())
+
+  // usernameNormalized is the lowercased username. Uniqueness and lookup both
+  // go through this column. `username` preserves the casing the player chose,
+  // for display only.
+  username           String @unique
+  usernameNormalized String @unique
+  email              String @unique
+  emailNormalized    String @unique
+
+  passwordHash String
+
+  // The Minecraft account this player competes as. Rendered as their avatar.
+  minecraftUsername String
+
+  // Discord snowflake, set by staff who approve from the Discord queue. Unique
+  // so one Discord account can never speak for two AREUS admins, and nullable
+  // because the overwhelming majority of players never link one.
+  discordUserId String? @unique
+
+  // PLAYER | ADMIN | OWNER — see domain/constants.ts
+  role String @default("PLAYER")
+
+  // PENDING | APPROVED | REJECTED | SUSPENDED
+  status String @default("PENDING")
+
+  // Set when an admin approves or rejects the registration.
+  statusReason   String?
+  statusChangedAt DateTime?
+  statusChangedById String?
+  statusChangedBy   User?   @relation("UserStatusChanger", fields: [statusChangedById], references: [id], onDelete: SetNull)
+  statusChangedFor  User[]  @relation("UserStatusChanger")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions           Session[]
+  passwordResets     PasswordResetToken[]
+  ratings            PlayerGamemodeRating[]
+  submittedMatches   Match[]              @relation("MatchSubmitter")
+  opposedMatches     Match[]              @relation("MatchOpponent")
+  wonMatches         Match[]              @relation("MatchWinner")
+  reviewedMatches    Match[]              @relation("MatchReviewer")
+  ratingHistory      RatingHistory[]
+  notifications      Notification[]
+  auditActions       AuditLog[]           @relation("AuditActor")
+
+  @@index([status])
+  @@index([role])
+}
+
+model Session {
+  id String @id @default(cuid())
+
+  // Opaque random token, hashed before storage. The raw value lives only in
+  // the client's httpOnly cookie.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id String @id @default(cuid())
+
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Gamemodes — the single source of truth (FULL_BUILD §34)
+//
+// The live site drifted into two different gamemode lists because they were
+// hardcoded in separate components. Every surface in this build reads this
+// table instead. Adding or retiring a gamemode is a data change.
+// ---------------------------------------------------------------------------
+
+model Gamemode {
+  id String @id @default(cuid())
+
+  slug        String  @unique
+  name        String
+  description String
+  rules       String
+  icon        String
+  // Design token key that gives each gamemode its accent colour.
+  themeToken  String  @default("mode-default")
+  active      Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ratings       PlayerGamemodeRating[]
+  matches       Match[]
+  ratingHistory RatingHistory[]
+
+  @@index([active, sortOrder])
+}
+
+// ---------------------------------------------------------------------------
+// Tiers — configurable thresholds (FULL_BUILD §36)
+//
+// Tier is derived from rating, never stored on the player. Thresholds are rows
+// so they can be retuned without a deploy.
+// ---------------------------------------------------------------------------
+
+model Tier {
+  id String @id @default(cuid())
+
+  label      String @unique
+  // Inclusive lower bound. The highest tier has no upper bound (null).
+  minRating  Int
+  maxRating  Int?
+  colorToken String
+  sortOrder  Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+}
+
+// ---------------------------------------------------------------------------
+// Ratings
+// ---------------------------------------------------------------------------
+
+model PlayerGamemodeRating {
+  id String @id @default(cuid())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gamemodeId String
+  gamemode   Gamemode @relation(fields: [gamemodeId], references: [id], onDelete: Cascade)
+
+  rating Int @default(1000)
+  wins   Int @default(0)
+  losses Int @default(0)
+
+  // Provisional players move by a larger K-factor until they have played
+  // enough matches for their rating to be meaningful.
+  matchesPlayed Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // One rating per player per gamemode.
+  @@unique([userId, gamemodeId])
+  // Serves the leaderboard: filter by gamemode, order by rating desc.
+  @@index([gamemodeId, rating])
+}
+
+// RatingHistory is append-only. Player ratings are a projection of these rows;
+// the rows are never updated or deleted, so a rating can always be audited
+// back to the match that caused it (FULL_BUILD §1135, §1423).
+model RatingHistory {
+  id String @id @default(cuid())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gamemodeId String
+  gamemode   Gamemode @relation(fields: [gamemodeId], references: [id], onDelete: Cascade)
+  matchId    String
+  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  ratingBefore Int
+  ratingAfter  Int
+  delta        Int
+  // Which engine produced this change, so a future migration to Glicko-2 is
+  // distinguishable in the history.
+  engine       String @default("elo")
+
+  createdAt DateTime @default(now())
+
+  // A match produces exactly one history row per player.
+  @@unique([matchId, userId])
+  @@index([userId, gamemodeId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Matches
+// ---------------------------------------------------------------------------
+
+model Match {
+  id String @id @default(cuid())
+
+  gamemodeId String
+  gamemode   Gamemode @relation(fields: [gamemodeId], references: [id], onDelete: Restrict)
+
+  // The submitter is always taken from the session, never from a form field
+  // (FULL_BUILD §1182).
+  submitterId String
+  submitter   User   @relation("MatchSubmitter", fields: [submitterId], references: [id], onDelete: Cascade)
+  opponentId  String
+  opponent    User   @relation("MatchOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  submitterScore Int
+  opponentScore  Int
+
+  // Denormalised for historical truth: recomputing the winner from scores is
+  // fine today, but the winner is part of the permanent record (§1423).
+  winnerId String?
+  winner   User?   @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  // PENDING_OPPONENT | PENDING_ADMIN | APPROVED | REJECTED | CANCELLED
+  status String @default("PENDING_OPPONENT")
+
+  notes String?
+
+  // Opponent confirmation step (FULL_BUILD §38).
+  opponentConfirmedAt DateTime?
+  opponentRejectedAt  DateTime?
+  opponentRejectReason String?
+  // When the opponent confirmation window lapses, the match escalates to admin.
+  escalatesAt         DateTime?
+
+  // Admin review.
+  reviewedById   String?
+  reviewedBy     User?     @relation("MatchReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt     DateTime?
+  reviewReason   String?
+
+  // Anti-manipulation: raised by heuristics at submission time (§49).
+  suspicious       Boolean @default(false)
+  suspicionReasons String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  evidence      MatchEvidence[]
+  ratingHistory RatingHistory[]
+
+  @@index([status, createdAt])
+  @@index([gamemodeId, status])
+  @@index([submitterId])
+  @@index([opponentId])
+}
+
+model MatchEvidence {
+  id String @id @default(cuid())
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  // Files live outside the web root and are streamed through an authorized
+  // route handler. Nothing here is publicly listable (FULL_BUILD §1574).
+  storagePath String
+  mimeType    String
+  byteSize    Int
+  // Detected from the file's magic bytes, not from the client's claim.
+  detectedType String
+  sha256       String
+
+  uploadedAt DateTime @default(now())
+
+  @@index([matchId])
+  // Identical evidence reused across submissions is a manipulation signal.
+  @@index([sha256])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications and audit
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // See NOTIFICATION_TYPES in domain/constants.ts
+  type    String
+  title   String
+  body    String
+  // Where clicking the notification should take the player.
+  href    String?
+  readAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt, createdAt])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  // The user who performed the action.
+  actorId String?
+  actor   User?   @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  // See AUDIT_ACTIONS in domain/constants.ts
+  action String
+
+  // Free-form target reference: the id of whatever was acted upon.
+  targetType String?
+  targetId   String?
+
+  // JSON blob of contextual detail. Never contains secrets or passwords.
+  metadata String?
+
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Discord approval projection
+//
+// One row per queue item that has been mirrored into the Discord approval
+// channel. This is a projection, never a source of truth: the decision itself
+// always happens through reviewPlayer/reviewMatch against the real tables.
+// ---------------------------------------------------------------------------
+
+model DiscordApproval {
+  id String @id @default(cuid())
+
+  // PLAYER | MATCH — see DISCORD_APPROVAL_KINDS in domain/constants.ts
+  kind     String
+  targetId String
+
+  channelId String
+
+  // Null between claiming the row and the message actually being posted. The
+  // row is written first on purpose: posting first would let two concurrent
+  // publishers both create a card, and the loser's insert would then fail
+  // leaving a live-button message with nothing behind it. A crash in the gap
+  // leaves messageId null, which the resolver reads as "nothing to edit" — a
+  // lost card rather than a duplicate decision.
+  messageId String?
+
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  // The idempotency claim: a target can be published exactly once.
+  @@unique([kind, targetId])
+  @@index([messageId])
+}
