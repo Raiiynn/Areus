@@ -5,6 +5,9 @@ import { isStaff } from '@/lib/auth/roles'
 import { readEvidence } from '@/lib/evidence'
 import { db } from '@/lib/db'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 /**
  * Serves a match evidence screenshot.
  *
