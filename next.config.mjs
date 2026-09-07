@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // AREUS uses Prisma, authenticated route handlers, server actions, and a
+  // cron endpoint. It must be deployed as a server application, never as a
+  // static export.
+  output: 'standalone',
   // A build and a dev server cannot share a build directory: `next build`
   // rewrites `.next` underneath a running `next dev`, which then serves 500s
   // until it is restarted. Setting NEXT_DIST_DIR sends a build somewhere else
