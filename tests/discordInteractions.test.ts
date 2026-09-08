@@ -84,7 +84,11 @@ async function handle(payload: unknown) {
   const { handleDiscordInteraction } = await import(
     '@/services/discordInteractions'
   )
-  return handleDiscordInteraction(payload as never)
+  const result = await handleDiscordInteraction(payload as never)
+  // Approve and reject-submit now defer their ack (Discord's 3-second
+  // window) and run the actual decision after — resolve it here so these
+  // tests keep asserting on the final outcome, not the interim ack.
+  return result.deferred ? result.run() : result.response
 }
 
 function approveId(

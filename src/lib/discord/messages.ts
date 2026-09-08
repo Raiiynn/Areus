@@ -393,6 +393,15 @@ export function ephemeral(content: string) {
   }
 }
 
+/**
+ * Acknowledges a component click within Discord's 3-second window while the
+ * actual decision (a database write plus a Discord API call) runs after the
+ * response. The eventual result replaces this via `editInteractionOriginal`.
+ */
+export function deferredEphemeral() {
+  return { type: 5, data: { flags: EPHEMERAL } }
+}
+
 /** Replaces the card in place — the normal answer to a button click. */
 export function updateMessage(body: Record<string, unknown>) {
   return { type: 7, data: body }

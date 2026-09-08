@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 
 import { discordConfig, isDiscordConfigured } from '@/lib/discord/config'
+import { editInteractionOriginal } from '@/lib/discord/rest'
 import { verifyDiscordSignature } from '@/lib/discord/verify'
 import {
   handleDiscordInteraction,
@@ -63,7 +64,31 @@ export async function POST(request: Request) {
   }
 
   try {
-    return NextResponse.json(await handleDiscordInteraction(interaction))
+    const result = await handleDiscordInteraction(interaction)
+
+    if (!result.deferred) {
+      return NextResponse.json(result.response)
+    }
+
+    // Discord gives 3 seconds to acknowledge. The actual decision writes to
+    // the database and calls back out to Discord, which routinely takes
+    // longer than that — so answer with a deferred ack now, and replace it
+    // with the real result once `result.run()` finishes.
+    const token = interaction.token
+    after(async () => {
+      const response = await result.run()
+      if (!token) return
+      try {
+        await editInteractionOriginal(
+          token,
+          (response as { data?: Record<string, unknown> }).data ?? {},
+        )
+      } catch (error) {
+        console.error('Discord deferred follow-up failed', error)
+      }
+    })
+
+    return NextResponse.json(result.ack)
   } catch (error) {
     // The handler maps its own expected failures to ephemeral replies, so
     // reaching here means something genuinely unforeseen. Log it, and tell

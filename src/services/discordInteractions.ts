@@ -14,7 +14,12 @@ import {
   decodeApprovalId,
   type ApprovalAction,
 } from '@/lib/discord/customId'
-import { buildRejectModal, ephemeral, PONG } from '@/lib/discord/messages'
+import {
+  buildRejectModal,
+  deferredEphemeral,
+  ephemeral,
+  PONG,
+} from '@/lib/discord/messages'
 import { reviewPlayerSchema, reviewMatchSchema } from '@/lib/validation/schemas'
 import { AdminError, reviewPlayer } from '@/services/admin'
 import { MatchError, reviewMatch } from '@/services/matches'
@@ -49,6 +54,7 @@ const MODAL_SUBMIT = 5
 
 export interface DiscordInteraction {
   type?: number
+  token?: string
   guild_id?: string
   channel_id?: string
   member?: { user?: { id?: string; username?: string } }
@@ -62,6 +68,24 @@ export interface DiscordInteraction {
 }
 
 export type InteractionResponse = Record<string, unknown>
+
+/**
+ * Either the final response, or an immediate ack plus the work still to run.
+ *
+ * APPROVE and the reject modal's submission both write to the database and
+ * then call out to Discord again to clear the card — routinely more than the
+ * 3 seconds Discord allows before an interaction shows "did not respond in
+ * time". Those two get deferred; every other path (PING, opening the reject
+ * modal, and every rejection before a decision is attempted) is a single
+ * cheap read or no I/O at all and answers inline.
+ */
+export type HandlerResult =
+  | { deferred: false; response: InteractionResponse }
+  | {
+      deferred: true
+      ack: InteractionResponse
+      run: () => Promise<InteractionResponse>
+    }
 
 interface Actor {
   id: string
@@ -186,54 +210,61 @@ async function decide(
 
 export async function handleDiscordInteraction(
   interaction: DiscordInteraction,
-): Promise<InteractionResponse> {
-  if (interaction.type === PING) return PONG
+): Promise<HandlerResult> {
+  if (interaction.type === PING) return { deferred: false, response: PONG }
 
   if (
     interaction.type !== MESSAGE_COMPONENT &&
     interaction.type !== MODAL_SUBMIT
   ) {
-    return ephemeral('Unsupported interaction.')
+    return { deferred: false, response: ephemeral('Unsupported interaction.') }
   }
 
   if (!fromOurGuild(interaction)) {
-    return ephemeral('This bot does not take decisions in this channel.')
+    return {
+      deferred: false,
+      response: ephemeral('This bot does not take decisions in this channel.'),
+    }
   }
 
   const id = decodeApprovalId(interaction.data?.custom_id)
-  if (!id) return ephemeral('That button is no longer valid.')
+  if (!id) {
+    return { deferred: false, response: ephemeral('That button is no longer valid.') }
+  }
 
   const actor = await resolveActor(interaction)
   if (!actor) {
-    return ephemeral(
-      'Your Discord account is not linked to an AREUS administrator. Link it on your AREUS profile.',
-    )
+    return {
+      deferred: false,
+      response: ephemeral(
+        'Your Discord account is not linked to an AREUS administrator. Link it on your AREUS profile.',
+      ),
+    }
   }
 
   const subject =
     id.kind === DISCORD_APPROVAL_KINDS.PLAYER ? 'registration' : 'match'
+  const action: ApprovalAction = id.action
 
-  try {
-    const action: ApprovalAction = id.action
+  // A button cannot carry text, and a rejection reason is mandatory, so the
+  // click opens a modal and the decision happens on its submission. Opening a
+  // modal is instant — no I/O — so this answers inline.
+  if (action === APPROVAL_ACTIONS.REJECT) {
+    return { deferred: false, response: buildRejectModal(id.kind, id.targetId, subject) }
+  }
 
-    if (action === APPROVAL_ACTIONS.APPROVE) {
-      return await decide(id.kind, id.targetId, actor, true, '')
-    }
+  const approve = action === APPROVAL_ACTIONS.APPROVE
+  const reason = approve ? '' : readReason(interaction)
 
-    // A button cannot carry text, and a rejection reason is mandatory, so the
-    // click opens a modal and the decision happens on its submission.
-    if (action === APPROVAL_ACTIONS.REJECT) {
-      return buildRejectModal(id.kind, id.targetId, subject)
-    }
-
-    return await decide(
-      id.kind,
-      id.targetId,
-      actor,
-      false,
-      readReason(interaction),
-    )
-  } catch (error) {
-    return ephemeral(describe(error))
+  return {
+    deferred: true,
+    ack: deferredEphemeral(),
+    run: async () => {
+      try {
+        return await decide(id.kind, id.targetId, actor, approve, reason)
+      } catch (error) {
+        return ephemeral(describe(error))
+      }
+    },
   }
 }
