@@ -1,10 +1,9 @@
 # Deployment
 
-> Last verified: 2026-08-22.
+> Last verified: 2026-09-07.
 >
-> **The application has not been deployed.** It runs locally and builds
-> cleanly. The production section below is a plan, not a record — nothing in it
-> has been executed.
+> The application has not been deployed from this workspace. Production
+> prerequisites below must be configured and verified in the target account.
 
 ## Local development
 
@@ -13,7 +12,7 @@ Requires Node 22+ and npm 10+, plus a Supabase PostgreSQL project.
 ```bash
 npm install
 cp .env.example .env          # then set SESSION_SECRET (see below)
-npm run db:push               # create the PostgreSQL schema during development
+npm run db:push               # local development only
 npm run db:seed               # gamemodes and tier bands (reference data only)
 npm run dev                   # http://localhost:3000
 ```
@@ -46,7 +45,16 @@ or from the Discord approval channel.
 | `DATABASE_URL` | yes | Supabase pooler connection string for runtime/Vercel |
 | `DIRECT_URL` | yes | Supabase direct connection string for Prisma migrations and `db push` |
 | `SESSION_SECRET` | yes | 32-byte hex. Rotating it invalidates every session |
-| `NEXT_PUBLIC_SITE_URL` | yes | Absolute URLs and Open Graph metadata |
+| `SITE_URL` | yes | Absolute URLs and Open Graph metadata |
+| `RESEND_API_KEY` | yes | Password reset email delivery |
+| `EMAIL_FROM` | yes | Verified sender for password reset email |
+| `EVIDENCE_BUCKET` | yes | S3-compatible bucket for private evidence |
+| `EVIDENCE_REGION` | yes | Object storage region |
+| `EVIDENCE_ENDPOINT` | no | Custom endpoint for R2, MinIO, or another S3-compatible provider |
+| `EVIDENCE_FORCE_PATH_STYLE` | no | Use path-style requests when required by the provider |
+| `EVIDENCE_ACCESS_KEY_ID` | yes | Object storage access key |
+| `EVIDENCE_SECRET_ACCESS_KEY` | yes | Object storage secret |
+| `CRON_SECRET` | yes | Secret for the escalation cron endpoint |
 | `DISCORD_BOT_TOKEN` | no | Discord approval channel. Its presence switches the whole integration on |
 | `DISCORD_PUBLIC_KEY` | no | Verifies interaction signatures |
 | `DISCORD_APPLICATION_ID` | no | Addresses interaction follow-ups |
@@ -58,7 +66,7 @@ integration is inert — nothing is posted and the interactions endpoint answers
 503. That is the state the test suite runs in, and it is why no test needs to
 mock the network. Buttons require a Discord **Application**, not a channel
 webhook; set its Interactions Endpoint URL to
-`<NEXT_PUBLIC_SITE_URL>/api/discord/interactions`, and give the bot
+`<SITE_URL>/api/discord/interactions`, and give the bot
 VIEW_CHANNEL and SEND_MESSAGES in the approvals channel.
 
 ## Scripts
@@ -71,7 +79,8 @@ VIEW_CHANNEL and SEND_MESSAGES in the approvals channel.
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run test` | Vitest (uses a separate PostgreSQL test database) |
-| `npm run db:push` / `db:seed` / `db:reset` | Schema and data |
+| `npm run db:migrate` | Apply committed Prisma migrations in production |
+| `npm run db:push` / `db:seed` / `db:reset` | Development schema and data |
 | `npm run audit:responsive` | Static responsive-risk scan |
 | `npm run audit:e2e` | HTTP end-to-end checks against a running server |
 | `npm run gates` | lint, typecheck, test, build, responsive audit |
@@ -96,42 +105,59 @@ The Prisma datasource declares both URLs in `prisma/schema.prisma`.
 The schema avoids raw SQL and provider-specific types, but the application must
 still be validated against the actual PostgreSQL version before production.
 
-### 2. Adopt migrations
+### 2. Apply migrations
 
-Development uses `prisma db push`, which leaves no history. Switch to
-`prisma migrate` and generate an initial migration before any production data
-exists.
+An initial migration now exists under `prisma/migrations/`. Run
+`npm run db:migrate` against the production database before deploying the
+application. Keep `prisma db:push` limited to disposable development databases.
 
-### 3. Move evidence to object storage
+### 3. Configure object storage
 
-Evidence is written to `var/evidence/` on the local filesystem. Serverless
-platforms have ephemeral disks, so this must move to S3, R2 or equivalent.
-`src/lib/evidence.ts` is the only module that touches storage.
+Production evidence is stored in the configured S3-compatible bucket. The
+filesystem adapter remains available only for local development and tests.
+Use a private bucket with no public listing or public object access.
 
 ### 4. Configure email
 
-Password reset currently surfaces its link in the UI because no SMTP exists.
-`forgotPasswordAction` returns `devResetPath` — that must be removed and
-replaced with a real transport.
+Password reset links are sent through the Resend API. Verify `EMAIL_FROM` in
+Resend and set `RESEND_API_KEY` in the deployment environment. The reset token
+is never returned to the browser.
 
-### 5. Add rate limiting
+### 5. Verify rate limiting
 
-Nothing throttles login or submission at the HTTP edge. See SECURITY.md.
+Login, password reset, and match submission actions use PostgreSQL-backed fixed
+window limits. Keep the database available to the application and add provider
+edge limits as a second layer if abuse volume warrants it.
 
-### 6. Schedule escalation
+### 6. Schedule escalation — **not yet configured**
 
-`escalateOverdueMatches()` exists but nothing calls it. Wire it to a cron job so
-unanswered confirmations actually escalate after 48 hours. This now matters more
-than it did: the function publishes a Discord card for each match it escalates,
-so until it is scheduled, escalated matches reach neither the channel nor an
-admin's attention on their own.
+`/api/cron/escalate` exists and is authenticated with `CRON_SECRET`, but nothing
+currently calls it. A scheduler must be attached before this deployment can be
+considered complete.
+
+The endpoint is the only caller of `escalateOverdueMatches()`. Until something
+invokes it, a match whose opponent never confirms within
+`OPPONENT_CONFIRMATION_WINDOW_HOURS` (48) stays in `PENDING_OPPONENT`
+indefinitely: it never reaches the admin queue and no Discord card is posted.
+The failure is silent — nothing errors, the matches simply stop moving.
+
+The repository previously carried a `vercel.json` scheduling it every 15
+minutes. That was removed because Vercel's Hobby plan permits **daily cron jobs
+only**, and a more frequent expression is rejected at deploy time, before the
+build runs — which blocked every deployment. Three ways to restore scheduling:
+
+| Option | Cadence | Cost |
+|---|---|---|
+| Scheduled GitHub Actions workflow calling the endpoint with `Bearer $CRON_SECRET` | ~15 min, best effort | free; needs `CRON_SECRET` and `SITE_URL` as repository secrets |
+| External cron service hitting the same URL | any | varies |
+| Restore `vercel.json` with a daily schedule such as `0 3 * * *` | once per day, ±59 min | free; escalation is delayed up to ~25 h past the 48 h window |
 
 ## Deployment procedure (untested)
 
 1. Confirm every gate passes on the exact commit: `npm run gates`
 2. Provision Postgres, set `DATABASE_URL`
-3. Set `SESSION_SECRET` and `NEXT_PUBLIC_SITE_URL`
-4. Run migrations **before** deploying the code that depends on them
+3. Set `SESSION_SECRET` and `SITE_URL`
+4. Run `npm run db:migrate` **before** deploying the code that depends on them
 5. Deploy
 6. Run `npm run audit:e2e -- https://your-host` against the deployed environment
 7. Watch error rate and latency through an agreed observation window
@@ -144,7 +170,9 @@ must be reversed first — and expand/migrate/contract staging (see
 
 ## Monitoring
 
-Not configured. There is no metrics backend, no alerting and no uptime check.
+Configure uptime checks for `/`, `/api/live/version`, database backup alerts,
+and error-rate alerts in the hosting provider before launch. The application
+does not bundle a metrics backend.
 
 ## Troubleshooting
 
