@@ -22,8 +22,8 @@ gsap.registerPlugin(useGSAP, ScrollTrigger)
  */
 export function Reveal({
   children,
-  stagger = 0.04,
-  y = 12,
+  stagger = 0.1,
+  y = 24,
   delay = 0,
   className,
 }: {
@@ -55,19 +55,30 @@ export function Reveal({
 
           if (reduced) {
             // Final state immediately. The information is never withheld.
-            gsap.set(targets, { opacity: 1, y: 0 })
+            gsap.set(targets, { opacity: 1, y: 0, filter: 'none' })
             return
           }
 
-          gsap.set(targets, { opacity: 0, y })
+          /* Vectorline's entrance: elements blur in with a vertical slide, as
+             if a diagnostic interface were booting. The curve is a hard
+             expo-out, so almost all of the distance is covered immediately and
+             only the last few pixels take the remaining time — which is what
+             lets a 1.4s duration read as settling rather than as lag.
+
+             `filter` is the one property here that is not transform or
+             opacity. It is composited rather than laid out, so it does not
+             trigger reflow, but it is deliberately confined to this entrance
+             and never used on anything that animates repeatedly. */
+          gsap.set(targets, { opacity: 0, y, filter: 'blur(12px)' })
 
           gsap.to(targets, {
             opacity: 1,
             y: 0,
-            duration: 0.4,
+            filter: 'blur(0px)',
+            duration: 1.4,
             delay,
             stagger,
-            ease: 'power2.out',
+            ease: 'expo.out',
             scrollTrigger: {
               trigger: scope.current,
               // Fires a little before the section is fully in view, so the

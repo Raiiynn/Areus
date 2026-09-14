@@ -27,7 +27,7 @@ export default async function AdminOverviewPage() {
 
       {/* Queues first — these are the things a moderator is here to clear. */}
       <section>
-        <h2 className="mb-3 text-2xs font-medium uppercase tracking-wider text-text-muted">
+        <h2 className="mb-3 text-2xs font-medium uppercase tracking-label text-text-muted">
           Needs attention
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -56,7 +56,7 @@ export default async function AdminOverviewPage() {
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-3 text-2xs font-medium uppercase tracking-wider text-text-muted">
+        <h2 className="mb-3 text-2xs font-medium uppercase tracking-label text-text-muted">
           Platform
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

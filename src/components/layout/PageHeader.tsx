@@ -35,7 +35,7 @@ export function PageHeader({
     <header className="mb-8 flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {eyebrow ? (
-          <p className="text-2xs font-medium uppercase tracking-[0.25em] text-accent">
+          <p className="text-2xs font-medium uppercase tracking-label text-accent">
             {eyebrow}
           </p>
         ) : null}
@@ -46,6 +46,71 @@ export function PageHeader({
           </p>
         ) : null}
       </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </header>
+  )
+}
+
+/**
+ * In-page section heading.
+ *
+ * Sections on the landing page were all set identically — same size, same
+ * weight, same rhythm — so the page had no loud part and nothing to read
+ * first. This gives a section a rank: a numbered accent eyebrow above a
+ * display-scale title, with a hairline rule that runs out to the right so the
+ * eye is carried across the section rather than stopping at the text.
+ *
+ * The index is the one decorative-looking element, and it is not decoration:
+ * it tells the reader how far down a long page they are.
+ */
+export function SectionHeading({
+  index,
+  eyebrow,
+  title,
+  description,
+  action,
+  className,
+}: {
+  index?: number
+  eyebrow?: string
+  title: string
+  description?: string
+  action?: React.ReactNode
+  className?: string
+}) {
+  return (
+    <header
+      className={cn('flex flex-col gap-4 sm:flex-row sm:items-end', className)}
+    >
+      <div className="min-w-0 flex-1">
+        {eyebrow ? (
+          <p className="flex items-center gap-3 text-2xs font-medium uppercase tracking-label text-accent">
+            {index !== undefined ? (
+              <span className="tnum text-text-muted">
+                {String(index).padStart(2, '0')}
+              </span>
+            ) : null}
+            <span>{eyebrow}</span>
+            {/* Decorative rule: hidden from assistive technology, and it never
+                carries meaning the label does not already state. */}
+            <span
+              aria-hidden="true"
+              className="h-px min-w-6 flex-1 bg-line sm:max-w-24"
+            />
+          </p>
+        ) : null}
+
+        <h2 className="mt-3 font-display text-3xl tracking-display text-text-primary">
+          {title}
+        </h2>
+
+        {description ? (
+          <p className="mt-2 max-w-prose text-sm text-text-secondary">
+            {description}
+          </p>
+        ) : null}
+      </div>
+
       {action ? <div className="shrink-0">{action}</div> : null}
     </header>
   )

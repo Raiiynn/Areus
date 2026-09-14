@@ -108,7 +108,11 @@ export function SiteHeader({
   }, [open])
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-surface-base/95 backdrop-blur">
+    /* Spec console: a persistent utility bar. The vertical rules that bracket
+       the logo and the actions are the "border-x intersections" of the
+       reference — they turn the bar into a measured instrument strip rather
+       than a floating row of links. */
+    <header className="sticky top-0 z-40 border-b border-line bg-surface-base/85 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-content items-center gap-4 px-4 md:px-6 lg:px-8">
         <Link href="/" className="text-text-primary">
           {/* 32px — the default, and the tallest ramp step that still leaves
@@ -116,7 +120,12 @@ export function SiteHeader({
           <Logo />
         </Link>
 
-        <nav aria-label="Main" className="ml-4 hidden md:block">
+        <span
+          aria-hidden="true"
+          className="hidden h-14 w-px shrink-0 bg-line md:block"
+        />
+
+        <nav aria-label="Main" className="hidden md:block">
           <ul className="flex items-center gap-1">
             {links.map((link) => (
               <li key={link.href}>
@@ -126,7 +135,12 @@ export function SiteHeader({
           </ul>
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <span
+          aria-hidden="true"
+          className="ml-auto hidden h-14 w-px shrink-0 bg-line md:block"
+        />
+
+        <div className="flex items-center gap-2 md:ml-0 ml-auto">
           {user ? (
             <>
               <Link
@@ -254,7 +268,7 @@ function NavItem({ link, pathname }: { link: NavLink; pathname: string }) {
       href={link.href}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'relative flex h-11 items-center rounded-md px-3 text-sm transition-colors duration-instant',
+        'relative flex h-11 items-center rounded-lg px-3 text-2xs font-medium uppercase tracking-label transition-colors duration-instant',
         active
           ? 'text-text-primary'
           : 'text-text-secondary hover:bg-surface-overlay hover:text-text-primary',

@@ -25,12 +25,12 @@ export function StatCard({
         className,
       )}
     >
-      <p className="text-2xs font-medium uppercase tracking-wider text-text-muted">
+      <p className="text-2xs font-medium uppercase tracking-label text-text-muted">
         {label}
       </p>
       <p
         className={cn(
-          'tnum mt-1 font-display text-2xl font-semibold',
+          'tnum mt-1 font-display text-2xl',
           tone === 'accent'
             ? 'text-accent'
             : tone === 'warning'

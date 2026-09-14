@@ -103,6 +103,16 @@ model PasswordResetToken {
   @@index([userId])
 }
 
+model RateLimitBucket {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  count       Int      @default(0)
+  windowStart DateTime
+  updatedAt   DateTime @updatedAt
+
+  @@index([windowStart])
+}
+
 // ---------------------------------------------------------------------------
 // Gamemodes — the single source of truth (FULL_BUILD §34)
 //

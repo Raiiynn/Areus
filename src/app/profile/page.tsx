@@ -185,7 +185,7 @@ export default async function ProfilePage() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
-      <dt className="text-2xs uppercase tracking-wider text-text-muted">
+      <dt className="text-2xs uppercase tracking-label text-text-muted">
         {label}
       </dt>
       <dd className="text-sm text-text-primary">{value}</dd>

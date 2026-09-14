@@ -52,7 +52,7 @@ export function TierBadge({
   return (
     <span
       className={cn(
-        'inline-grid place-items-center rounded-sm border font-display font-semibold',
+        'inline-grid place-items-center rounded-sm border font-display',
         tierColor[tier.label] ?? 'border-line text-text-secondary',
         sizes[size],
         className,

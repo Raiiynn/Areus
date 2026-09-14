@@ -20,6 +20,8 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+.claude/
+
 .vercel
 *.tsbuildinfo
 next-env.d.ts

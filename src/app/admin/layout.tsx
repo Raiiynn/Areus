@@ -47,10 +47,10 @@ export default async function AdminLayout({
       <div className="border-b border-line bg-surface-raised">
         <div className="mx-auto max-w-content px-4 md:px-6 lg:px-8">
           <div className="flex items-center gap-3 pt-4">
-            <span className="text-2xs font-medium uppercase tracking-[0.25em] text-accent">
+            <span className="text-2xs font-medium uppercase tracking-label text-accent">
               Staff area
             </span>
-            <span className="rounded-sm border border-accent/40 bg-accent-dim px-2 py-px text-2xs font-medium uppercase tracking-wider text-accent">
+            <span className="rounded-sm border border-accent/40 bg-accent-dim px-2 py-px text-2xs font-medium uppercase tracking-label text-accent">
               {user.role}
             </span>
           </div>

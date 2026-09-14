@@ -108,7 +108,7 @@ export default async function PlayerProfilePage({
 
             {form.length > 0 ? (
               <div className="mt-4 flex items-center gap-2">
-                <span className="text-2xs uppercase tracking-wider text-text-muted">
+                <span className="text-2xs uppercase tracking-label text-text-muted">
                   Recent form
                 </span>
                 <ul className="flex gap-1">
@@ -125,7 +125,7 @@ export default async function PlayerProfilePage({
           {best ? (
             <div className="flex items-center gap-4 rounded-md border border-line bg-surface-raised px-5 py-4 sm:flex-col sm:items-end">
               <div className="sm:text-right">
-                <p className="text-2xs uppercase tracking-wider text-text-muted">
+                <p className="text-2xs uppercase tracking-label text-text-muted">
                   Best rating
                 </p>
                 <RatingValue value={best.rating} size="xl" />
@@ -139,7 +139,7 @@ export default async function PlayerProfilePage({
       {/* Overall */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="px-4 py-3">
-          <p className="text-2xs uppercase tracking-wider text-text-muted">
+          <p className="text-2xs uppercase tracking-label text-text-muted">
             Wins
           </p>
           <p className="tnum mt-1 font-display text-2xl text-positive">
@@ -147,7 +147,7 @@ export default async function PlayerProfilePage({
           </p>
         </Card>
         <Card className="px-4 py-3">
-          <p className="text-2xs uppercase tracking-wider text-text-muted">
+          <p className="text-2xs uppercase tracking-label text-text-muted">
             Losses
           </p>
           <p className="tnum mt-1 font-display text-2xl text-negative">
@@ -155,7 +155,7 @@ export default async function PlayerProfilePage({
           </p>
         </Card>
         <Card className="px-4 py-3">
-          <p className="text-2xs uppercase tracking-wider text-text-muted">
+          <p className="text-2xs uppercase tracking-label text-text-muted">
             Win rate
           </p>
           <p className="tnum mt-1 font-display text-2xl text-text-primary">
@@ -206,19 +206,19 @@ export default async function PlayerProfilePage({
                     {/* responsive-ok: W / L / win-rate, single short numbers */}
                     <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-3 text-sm">
                       <div>
-                        <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                        <dt className="text-2xs uppercase tracking-label text-text-muted">
                           W
                         </dt>
                         <dd className="tnum text-positive">{rating.wins}</dd>
                       </div>
                       <div>
-                        <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                        <dt className="text-2xs uppercase tracking-label text-text-muted">
                           L
                         </dt>
                         <dd className="tnum text-negative">{rating.losses}</dd>
                       </div>
                       <div>
-                        <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                        <dt className="text-2xs uppercase tracking-label text-text-muted">
                           Rate
                         </dt>
                         <dd className="tnum text-text-primary">

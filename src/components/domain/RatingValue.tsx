@@ -35,7 +35,7 @@ export function RatingValue({
   return (
     <span
       className={cn(
-        'tnum font-display font-semibold text-text-primary',
+        'tnum font-display text-text-primary',
         sizes[size],
         className,
       )}

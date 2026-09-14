@@ -61,7 +61,7 @@ export default async function GamemodesPage() {
                   {/* responsive-ok: two short stat cells, ~120px each at 320px */}
                   <dl className="mt-auto grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm">
                     <div>
-                      <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                      <dt className="text-2xs uppercase tracking-label text-text-muted">
                         Ranked players
                       </dt>
                       <dd className="tnum mt-0.5 text-text-primary">
@@ -69,7 +69,7 @@ export default async function GamemodesPage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                      <dt className="text-2xs uppercase tracking-label text-text-muted">
                         Matches
                       </dt>
                       <dd className="tnum mt-0.5 text-text-primary">
@@ -77,7 +77,7 @@ export default async function GamemodesPage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                      <dt className="text-2xs uppercase tracking-label text-text-muted">
                         Top player
                       </dt>
                       <dd className="mt-0.5 truncate text-text-primary">
@@ -85,7 +85,7 @@ export default async function GamemodesPage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                      <dt className="text-2xs uppercase tracking-label text-text-muted">
                         Average rating
                       </dt>
                       <dd className="tnum mt-0.5 text-text-primary">

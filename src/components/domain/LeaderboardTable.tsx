@@ -33,6 +33,16 @@ export interface LeaderboardRow {
   }
 }
 
+/**
+ * Rank colour. Only the podium places get one, and each also keeps its numeral,
+ * so the distinction never rests on colour alone.
+ */
+function rankClass(rank: number): string {
+  if (rank === 1) return 'text-gold'
+  if (rank <= 3) return 'text-accent'
+  return 'text-text-secondary'
+}
+
 export function LeaderboardTable({
   rows,
   tiers,
@@ -40,6 +50,12 @@ export function LeaderboardTable({
   rows: readonly LeaderboardRow[]
   tiers: readonly TierDefinition[]
 }) {
+  /* The bar below each rating is scaled against the highest rating on the
+     page, which is the first row because the list arrives sorted. It is a
+     second reading of a number that is already printed beside it — a gap of
+     forty points is obvious as a length long before it is obvious as digits. */
+  const topRating = rows[0]?.rating ?? 0
+
   return (
     <>
       {/* Desktop: real table */}
@@ -67,7 +83,9 @@ export function LeaderboardTable({
                   key={row.id}
                   className="group transition-colors duration-instant hover:bg-surface-overlay"
                 >
-                  <td className="tnum px-3 py-3 text-right font-display text-text-secondary">
+                  <td
+                    className={`tnum px-3 py-3 text-right font-display text-lg ${rankClass(row.rank)}`}
+                  >
                     {row.rank}
                   </td>
                   <td className="px-3 py-3">
@@ -84,6 +102,7 @@ export function LeaderboardTable({
                   </td>
                   <td className="px-3 py-3 text-right">
                     <RatingValue value={row.rating} size="sm" />
+                    <RatingBar rating={row.rating} topRating={topRating} />
                   </td>
                   <td className="px-3 py-3 text-center">
                     <TierBadge
@@ -118,7 +137,9 @@ export function LeaderboardTable({
                 href={`/players/${row.user.username}`}
                 className="flex items-center gap-3 px-4 py-3 transition-colors duration-instant hover:bg-surface-overlay"
               >
-                <span className="tnum w-6 shrink-0 text-right font-display text-text-secondary">
+                <span
+                  className={`tnum w-6 shrink-0 text-right font-display text-lg ${rankClass(row.rank)}`}
+                >
                   {row.rank}
                 </span>
 
@@ -160,9 +181,45 @@ function Th({
   return (
     <th
       scope="col"
-      className={`px-3 py-2 text-2xs font-medium uppercase tracking-wider text-text-muted ${className ?? ''}`}
+      className={`px-3 py-2 text-2xs font-medium uppercase tracking-label text-text-muted ${className ?? ''}`}
     >
       {children}
     </th>
+  )
+}
+
+/**
+ * The rating, drawn.
+ *
+ * Purely redundant by design: the number it describes is printed directly
+ * above it, so this carries no information of its own and is hidden from
+ * assistive technology. Its job is to make the shape of the ladder — a tight
+ * pack at the top, a long tail below — visible without reading a column of
+ * four-digit numbers.
+ *
+ * The floor of 8% keeps the lowest-rated row from rendering an invisible bar,
+ * which would read as missing data rather than as a low rating.
+ */
+function RatingBar({
+  rating,
+  topRating,
+}: {
+  rating: number
+  topRating: number
+}) {
+  if (topRating <= 0) return null
+
+  const share = Math.max(8, Math.round((rating / topRating) * 100))
+
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-1.5 block h-px w-full overflow-hidden bg-line"
+    >
+      <span
+        className="block h-full bg-accent opacity-70"
+        style={{ width: `${share}%`, marginLeft: 'auto' }}
+      />
+    </span>
   )
 }

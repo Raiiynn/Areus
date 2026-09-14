@@ -3,8 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+import { RATE_LIMITS } from '@/domain/constants'
 import { requireApprovedUser, requireAdmin } from '@/lib/auth/authorization'
 import { EvidenceError, storeEvidence } from '@/lib/evidence'
+import { enforceRateLimit, RateLimitError } from '@/lib/rate-limit'
 import {
   confirmMatchSchema,
   reviewMatchSchema,
@@ -49,6 +51,16 @@ export async function submitMatchAction(
 ): Promise<MatchActionState> {
   // Approval gate, not just authentication: a pending account cannot compete.
   const user = await requireApprovedUser()
+
+  try {
+    await enforceRateLimit({
+      key: `match-submit:${user.id}`,
+      ...RATE_LIMITS.MATCH_SUBMISSION,
+    })
+  } catch (error) {
+    if (error instanceof RateLimitError) return { error: error.message }
+    throw error
+  }
 
   const raw = {
     opponentUsername: formData.get('opponentUsername'),

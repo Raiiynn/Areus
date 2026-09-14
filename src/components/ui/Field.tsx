@@ -36,7 +36,7 @@ export function Field({
     <div className="space-y-2">
       <label
         htmlFor={htmlFor}
-        className="block text-xs font-medium uppercase tracking-wider text-text-secondary"
+        className="block text-xs font-medium uppercase tracking-label text-text-secondary"
       >
         {label}
         {/* Marked in text, not by colour alone. */}

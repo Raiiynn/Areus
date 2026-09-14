@@ -57,7 +57,7 @@ export function SubmitMatchForm({
         {/* The submitter is shown but not editable — identity comes from the
             session, so there is no field here to tamper with. */}
         <div className="rounded-md border border-line bg-surface-sunken px-3 py-3">
-          <p className="text-2xs font-medium uppercase tracking-wider text-text-muted">
+          <p className="text-2xs font-medium uppercase tracking-label text-text-muted">
             Submitting as
           </p>
           <p className="mt-1 text-text-primary">{username}</p>

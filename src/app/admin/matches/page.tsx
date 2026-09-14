@@ -111,7 +111,7 @@ export default async function AdminMatchesPage() {
 
                   <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm sm:grid-cols-4">
                     <div>
-                      <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                      <dt className="text-2xs uppercase tracking-label text-text-muted">
                         Head to head
                       </dt>
                       <dd className="tnum mt-0.5 text-text-primary">
@@ -119,7 +119,7 @@ export default async function AdminMatchesPage() {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                      <dt className="text-2xs uppercase tracking-label text-text-muted">
                         Total meetings
                       </dt>
                       <dd className="tnum mt-0.5 text-text-primary">
@@ -127,7 +127,7 @@ export default async function AdminMatchesPage() {
                       </dd>
                     </div>
                     <div className="col-span-2">
-                      <dt className="text-2xs uppercase tracking-wider text-text-muted">
+                      <dt className="text-2xs uppercase tracking-label text-text-muted">
                         Evidence
                       </dt>
                       <dd className="mt-0.5">
@@ -194,7 +194,7 @@ function PlayerSide({
     >
       <PlayerAvatar username={minecraft} size={40} />
       <div className="min-w-0 flex-1">
-        <p className="text-2xs uppercase tracking-wider text-text-muted">
+        <p className="text-2xs uppercase tracking-label text-text-muted">
           {role}
         </p>
         <Link
@@ -206,7 +206,7 @@ function PlayerSide({
       </div>
       <span
         className={
-          'tnum font-display text-2xl ' +
+          'tnum font-display text-2xl' +
           (winner ? 'text-positive' : 'text-text-secondary')
         }
       >

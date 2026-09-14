@@ -123,6 +123,13 @@ export const SESSION_DURATION_DAYS = 30
 /** Password reset token lifetime. */
 export const PASSWORD_RESET_WINDOW_MINUTES = 60
 
+/** Request windows used by server-side abuse controls. */
+export const RATE_LIMITS = {
+  LOGIN: { max: 10, windowMinutes: 15 },
+  PASSWORD_RESET: { max: 5, windowMinutes: 60 },
+  MATCH_SUBMISSION: { max: 10, windowMinutes: 10 },
+} as const
+
 /** Largest evidence screenshot accepted, in bytes. */
 export const MAX_EVIDENCE_BYTES = 5 * 1024 * 1024
 

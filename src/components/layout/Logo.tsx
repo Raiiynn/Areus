@@ -45,7 +45,7 @@ export function Logo({
           the brand name is set in live text beside it — selectable, and read
           once rather than twice by a screen reader. */}
       {showWordmark ? (
-        <span className="font-display text-xl font-semibold tracking-widest">
+        <span className="font-display text-xl tracking-label">
           AREUS
         </span>
       ) : (

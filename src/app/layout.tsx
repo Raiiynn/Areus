@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 
+import { bebasNeue, manrope } from './fonts'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { LiveRefresh } from '@/components/live/LiveRefresh'
@@ -8,7 +9,7 @@ import { countUnread } from '@/services/notifications'
 
 import './globals.css'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'http://localhost:3000'
+const siteUrl = process.env.SITE_URL?.trim() || 'http://localhost:3000'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a12',
+  themeColor: '#070707',
   width: 'device-width',
   initialScale: 1,
   // Never block zoom: capping scale is a WCAG 1.4.4 failure.
@@ -44,7 +45,10 @@ export default async function RootLayout({
   const unread = user ? await countUnread(user.id) : 0
 
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${bebasNeue.variable} ${manrope.variable}`}
+    >
       <body className="flex min-h-dvh flex-col">
         {/* Skip link: first focusable element, visible once focused. */}
         <a

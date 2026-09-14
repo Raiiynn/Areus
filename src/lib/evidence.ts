@@ -3,6 +3,7 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 
 import {
   ALLOWED_EVIDENCE_TYPES,
@@ -22,6 +23,21 @@ import {
  */
 
 const EVIDENCE_ROOT = path.join(process.cwd(), 'var', 'evidence')
+const evidenceBucket = process.env.EVIDENCE_BUCKET
+const s3 = evidenceBucket
+  ? new S3Client({
+      region: process.env.EVIDENCE_REGION ?? 'auto',
+      endpoint: process.env.EVIDENCE_ENDPOINT,
+      forcePathStyle: process.env.EVIDENCE_FORCE_PATH_STYLE === 'true',
+      credentials:
+        process.env.EVIDENCE_ACCESS_KEY_ID && process.env.EVIDENCE_SECRET_ACCESS_KEY
+          ? {
+              accessKeyId: process.env.EVIDENCE_ACCESS_KEY_ID,
+              secretAccessKey: process.env.EVIDENCE_SECRET_ACCESS_KEY,
+            }
+          : undefined,
+    })
+  : null
 
 export class EvidenceError extends Error {
   constructor(message: string) {
@@ -111,10 +127,24 @@ export async function storeEvidence(file: File): Promise<StoredEvidence> {
   // the filename carries no user-controlled text, so path traversal via a
   // crafted filename is impossible.
   const filename = `${sha256}.${detected}`
-  const absolutePath = path.join(EVIDENCE_ROOT, filename)
+  if (process.env.NODE_ENV === 'production' && (!s3 || !evidenceBucket)) {
+    throw new EvidenceError('Evidence storage is not configured.')
+  }
 
-  await mkdir(EVIDENCE_ROOT, { recursive: true })
-  await writeFile(absolutePath, buffer)
+  if (s3 && evidenceBucket) {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: evidenceBucket,
+        Key: filename,
+        Body: buffer,
+        ContentType: `image/${detected}`,
+      }),
+    )
+  } else {
+    const absolutePath = path.join(EVIDENCE_ROOT, filename)
+    await mkdir(EVIDENCE_ROOT, { recursive: true })
+    await writeFile(absolutePath, buffer)
+  }
 
   return {
     storagePath: filename,
@@ -137,12 +167,22 @@ export async function readEvidence(storagePath: string): Promise<Buffer> {
     throw new EvidenceError('Malformed evidence reference.')
   }
 
+  if (s3 && evidenceBucket) {
+    const result = await s3.send(
+      new GetObjectCommand({ Bucket: evidenceBucket, Key: storagePath }),
+    )
+    if (!result.Body) throw new EvidenceError('Evidence is unavailable.')
+    return Buffer.from(await result.Body.transformToByteArray())
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new EvidenceError('Evidence storage is not configured.')
+  }
+
   const absolutePath = path.join(EVIDENCE_ROOT, storagePath)
   const resolved = path.resolve(absolutePath)
-
   if (!resolved.startsWith(path.resolve(EVIDENCE_ROOT))) {
     throw new EvidenceError('Evidence path escapes the storage root.')
   }
-
   return readFile(resolved)
 }

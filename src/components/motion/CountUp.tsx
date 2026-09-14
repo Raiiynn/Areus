@@ -19,7 +19,7 @@ gsap.registerPlugin(useGSAP)
  */
 export function CountUp({
   value,
-  duration = 0.9,
+  duration = 1.4,
   className,
 }: {
   value: number
@@ -41,7 +41,7 @@ export function CountUp({
         gsap.to(counter, {
           current: value,
           duration,
-          ease: 'power2.out',
+          ease: 'expo.out',
           onUpdate: () => {
             node.textContent = String(Math.round(counter.current))
           },

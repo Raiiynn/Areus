@@ -6,6 +6,7 @@ import { after } from 'next/server'
 
 import {
   PASSWORD_RESET_WINDOW_MINUTES,
+  RATE_LIMITS,
   ROLES,
   USER_STATUSES,
 } from '@/domain/constants'
@@ -27,6 +28,8 @@ import {
   resetPasswordSchema,
 } from '@/lib/validation/schemas'
 import { publishPlayerApproval } from '@/services/discordApprovals'
+import { sendPasswordResetEmail } from '@/lib/auth/email'
+import { enforceRateLimit, RateLimitError } from '@/lib/rate-limit'
 
 /**
  * Authentication actions.
@@ -40,11 +43,6 @@ export interface ActionState {
   error?: string
   fieldErrors?: Record<string, string>
   success?: string
-  /**
-   * Reset link, surfaced in the UI because no SMTP exists in this environment.
-   * FULL_BUILD §1271 makes email conditional on that infrastructure.
-   */
-  devResetPath?: string
 }
 
 function fieldErrorsFrom(error: {
@@ -122,6 +120,16 @@ export async function loginAction(
     return { fieldErrors: fieldErrorsFrom(parsed.error) }
   }
 
+  try {
+    await enforceRateLimit({
+      key: `login:${parsed.data.username.toLowerCase()}`,
+      ...RATE_LIMITS.LOGIN,
+    })
+  } catch (error) {
+    if (error instanceof RateLimitError) return { error: error.message }
+    throw error
+  }
+
   const user = await db.user.findUnique({
     where: { usernameNormalized: parsed.data.username.toLowerCase() },
   })
@@ -167,6 +175,16 @@ export async function forgotPasswordAction(
     return { fieldErrors: fieldErrorsFrom(parsed.error) }
   }
 
+  try {
+    await enforceRateLimit({
+      key: `password-reset:${parsed.data.email.toLowerCase()}`,
+      ...RATE_LIMITS.PASSWORD_RESET,
+    })
+  } catch (error) {
+    if (error instanceof RateLimitError) return { error: error.message }
+    throw error
+  }
+
   const user = await db.user.findUnique({
     where: { emailNormalized: parsed.data.email.toLowerCase() },
   })
@@ -192,10 +210,8 @@ export async function forgotPasswordAction(
     },
   })
 
-  // Without SMTP the link has to reach the user somehow. Returning it is a
-  // development affordance and is documented as such — it must be replaced by
-  // an email transport before this ships.
-  return { ...genericResponse, devResetPath: `/reset-password?token=${token}` }
+  await sendPasswordResetEmail(user.email, token)
+  return genericResponse
 }
 
 export async function resetPasswordAction(

@@ -19,7 +19,7 @@ export function GamemodeBadge({
     <span
       className={cn(
         'inline-flex items-center gap-1.5 rounded-sm border border-line',
-        'bg-surface-overlay px-2 py-px text-2xs font-medium uppercase tracking-wider',
+        'bg-surface-overlay px-2 py-px text-2xs font-medium uppercase tracking-label',
         'text-text-secondary',
         className,
       )}

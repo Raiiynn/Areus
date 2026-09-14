@@ -135,12 +135,10 @@ These are real and unaddressed:
 
 | Gap | Impact |
 |---|---|
-| **No rate limiting** | Login and submission endpoints can be hammered. The submission heuristics flag high rates for review, but nothing blocks at the edge |
-| **No CSP header** | Nothing beyond React escaping mitigates an injected script |
+| **No provider edge rate limiting** | Application-level PostgreSQL limits protect login, reset, and submission actions; add edge limits if traffic requires it |
 | **No CSRF token** | Server Actions carry same-origin protections, but there is no explicit anti-CSRF token |
 | **bcrypt, not argon2id** | A deliberate trade for Windows build reliability (ADR-0001) |
-| **No migration history** | `db push` leaves no audit trail of schema changes |
-| **Reset link surfaced in UI** | No SMTP exists. Must be replaced with email before production |
+| **No bundled monitoring backend** | Hosting uptime, error, and database backup alerts must be configured operationally |
 | **Discord linking is unverified** | An admin types their own Discord ID; nothing proves they own it. A mistyped ID grants approval rights to a stranger. Mitigated by uniqueness and an audit row on every link, not prevented. OAuth2 `identify` is the fix |
 
 ## Discord approvals

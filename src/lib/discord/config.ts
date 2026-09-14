@@ -49,6 +49,6 @@ export const DISCORD_API_BASE = 'https://discord.com/api/v10'
 
 /** Absolute origin for the "Open in AREUS" link buttons. */
 export function siteUrl(path: string): string {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const base = process.env.SITE_URL ?? 'http://localhost:3000'
   return `${base.replace(/\/+$/, '')}${path}`
 }
