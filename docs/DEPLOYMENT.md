@@ -129,28 +129,33 @@ Login, password reset, and match submission actions use PostgreSQL-backed fixed
 window limits. Keep the database available to the application and add provider
 edge limits as a second layer if abuse volume warrants it.
 
-### 6. Schedule escalation — **not yet configured**
+### 6. Schedule escalation
 
-`/api/cron/escalate` exists and is authenticated with `CRON_SECRET`, but nothing
-currently calls it. A scheduler must be attached before this deployment can be
-considered complete.
+`/api/cron/escalate` is authenticated with `CRON_SECRET`. It is the only caller
+of `escalateOverdueMatches()`, which moves a match whose opponent has not
+confirmed within `OPPONENT_CONFIRMATION_WINDOW_HOURS` (48) to `PENDING_ADMIN`
+and posts its Discord approval card. If nothing calls the endpoint, those
+matches stay in `PENDING_OPPONENT` indefinitely, with no error anywhere.
 
-The endpoint is the only caller of `escalateOverdueMatches()`. Until something
-invokes it, a match whose opponent never confirms within
-`OPPONENT_CONFIRMATION_WINDOW_HOURS` (48) stays in `PENDING_OPPONENT`
-indefinitely: it never reaches the admin queue and no Discord card is posted.
-The failure is silent — nothing errors, the matches simply stop moving.
+It is called every 15 minutes by `.github/workflows/escalate.yml`. Set two
+repository secrets (GitHub → Settings → Secrets and variables → Actions):
 
-The repository previously carried a `vercel.json` scheduling it every 15
-minutes. That was removed because Vercel's Hobby plan permits **daily cron jobs
-only**, and a more frequent expression is rejected at deploy time, before the
-build runs — which blocked every deployment. Three ways to restore scheduling:
+| Secret | Value |
+|---|---|
+| `SITE_URL` | Production origin, e.g. `https://your-app.vercel.app` |
+| `CRON_SECRET` | Identical to `CRON_SECRET` in the Vercel environment |
 
-| Option | Cadence | Cost |
-|---|---|---|
-| Scheduled GitHub Actions workflow calling the endpoint with `Bearer $CRON_SECRET` | ~15 min, best effort | free; needs `CRON_SECRET` and `SITE_URL` as repository secrets |
-| External cron service hitting the same URL | any | varies |
-| Restore `vercel.json` with a daily schedule such as `0 3 * * *` | once per day, ±59 min | free; escalation is delayed up to ~25 h past the 48 h window |
+Verify from the Actions tab with **Run workflow**: a green run prints
+`{"escalated":N}`. A 401 means the two `CRON_SECRET` values differ.
+
+Why not Vercel Cron: the Hobby plan allows **daily cron jobs only**, and a more
+frequent schedule in `vercel.json` is rejected at deploy time, before the build
+runs. A daily Vercel cron would delay escalation by up to ~25 h past the 48 h
+window.
+
+Known limits of GitHub schedules: runs are best effort and can start late, and
+GitHub disables scheduled workflows after 60 days without repository activity.
+If escalation stops, check that the workflow is still enabled.
 
 ## Deployment procedure (untested)
 
