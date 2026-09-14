@@ -11,6 +11,14 @@ Initial implementation. Nothing has been released or deployed.
 
 ### Added
 
+**Production hardening**
+
+- Database-backed request limits for login, password reset, and match submission.
+- Password reset delivery through Resend without exposing tokens in the UI.
+- S3-compatible evidence storage for production deployments.
+- CSP headers and an authenticated match-escalation cron endpoint.
+- Initial Prisma migration for production schema deployment.
+
 **Competition**
 
 - Nine gamemodes, each with an independent rating and ladder, driven from a

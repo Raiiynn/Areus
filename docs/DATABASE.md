@@ -1,7 +1,7 @@
 # Database
 
 > Describes the schema as implemented in `prisma/schema.prisma`.
-> Last verified: 2026-08-22.
+> Last verified: 2026-09-07.
 
 ## Technology
 
@@ -10,7 +10,7 @@ avoids raw SQL and provider-specific column types so the local and Vercel
 databases use the same provider (ADR-0001).
 
 `DATABASE_URL` is the Supabase pooler URL used at runtime. `DIRECT_URL` is the
-direct Supabase URL used by Prisma for migrations and `db push`.
+direct Supabase URL used by Prisma migrations.
 
 Role and status columns are `String` because their legal values are owned by the
 application. They live in `src/domain/constants.ts` and are enforced by Zod at
@@ -111,6 +111,12 @@ magic bytes, not the client's claim.
 
 Indexed on `sha256` so reused evidence is cheap to detect.
 
+### RateLimitBucket
+
+Stores fixed-window counters for login, password reset, and match submission.
+The key is a normalized server-generated scope, and expired buckets are reset
+on the next request.
+
 ### Notification / AuditLog
 
 `Notification` is per-user, indexed on `(userId, readAt, createdAt)`.
@@ -146,8 +152,9 @@ a second gate here could disagree with the first.
 
 ## Migrations
 
-Development uses `prisma db push`. **No migration history exists yet** — before
-production, switch to `prisma migrate` so changes are versioned and reversible.
+Development may use `prisma db push` against a disposable database. Production
+uses the committed migration under `prisma/migrations/0001_initial` through
+`npm run db:migrate`.
 
 ## Seeding
 
