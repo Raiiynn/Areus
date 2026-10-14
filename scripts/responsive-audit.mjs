@@ -175,9 +175,9 @@ assertPresent(
   /md:hidden/,
 )
 assertPresent(
-  'header collapses to a drawer below md',
+  'header collapses to a drawer below xl (expanded SMP navigation)',
   'src/components/layout/SiteHeader.tsx',
-  /md:hidden/,
+  /xl:hidden/,
 )
 assertPresent(
   'fluid type scale',
