@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 
-import { bebasNeue, manrope } from './fonts'
+import { spaceGrotesk, inter } from './fonts'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { LiveRefresh } from '@/components/live/LiveRefresh'
@@ -14,22 +14,22 @@ const siteUrl = process.env.SITE_URL?.trim() || 'http://localhost:3000'
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'AREUS — Competitive Minecraft PvP Rankings',
+    default: 'AREUS — Hardcore SMP',
     template: 'AREUS — %s',
   },
   description:
-    'Competitive Minecraft PvP rankings. Every rating change is backed by a reviewed match with evidence.',
+    'Survive. Conquer. Dominate. Explore the AREUS private Hardcore SMP community, seasons, survivors and factions.',
   openGraph: {
     type: 'website',
     siteName: 'AREUS',
-    title: 'AREUS — Competitive Minecraft PvP Rankings',
+    title: 'AREUS — Hardcore SMP',
     description:
-      'Competitive Minecraft PvP rankings across nine gamemodes, verified by admin review.',
+      'Survival, factions and season stories from the private AREUS Minecraft community.',
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#070707',
+  themeColor: '#080F1E',
   width: 'device-width',
   initialScale: 1,
   // Never block zoom: capping scale is a WCAG 1.4.4 failure.
@@ -45,10 +45,7 @@ export default async function RootLayout({
   const unread = user ? await countUnread(user.id) : 0
 
   return (
-    <html
-      lang="en"
-      className={`${bebasNeue.variable} ${manrope.variable}`}
-    >
+    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable}`}>
       <body className="flex min-h-dvh flex-col">
         {/* Skip link: first focusable element, visible once focused. */}
         <a

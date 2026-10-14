@@ -1,140 +1,62 @@
 import type { Metadata } from 'next'
-
-import { PageHeader, PageShell } from '@/components/layout/PageHeader'
-import { Card } from '@/components/ui/Card'
-import { GamemodeBadge } from '@/components/domain/GamemodeBadge'
-import { listActiveGamemodes } from '@/services/gamemodes'
+import Link from 'next/link'
 import {
-  OPPONENT_CONFIRMATION_WINDOW_HOURS,
-  PROVISIONAL_MATCH_THRESHOLD,
-} from '@/domain/constants'
+  PortalHeading,
+  PortalShell,
+  PortalPanel,
+} from '@/components/hardcore/Portal'
+import { SMP_FEATURES } from '@/domain/hardcore'
 
-export const dynamic = 'force-dynamic'
-
-export const metadata: Metadata = {
-  title: 'Rules',
-  description: 'How AREUS matches are submitted, verified and rated.',
-}
-
-const CONDUCT = [
-  {
-    title: 'Use your real username',
-    detail:
-      'Submit under the account you actually played on. Your identity comes from your signed-in session, so submitting for someone else is not possible.',
-  },
-  {
-    title: 'Provide clear evidence',
-    detail:
-      'A screenshot must show the final score and both usernames legibly. Cropped, edited or ambiguous evidence is rejected.',
-  },
-  {
-    title: 'Never manipulate results',
-    detail:
-      'Arranged losses, recycled screenshots and inflated scores all void the match. Repeated attempts result in suspension.',
-  },
-  {
-    title: 'Report honestly, even when you lose',
-    detail:
-      'Either player may submit a match. The opponent confirms it either way.',
-  },
-]
-
-export default async function RulesPage() {
-  const gamemodes = await listActiveGamemodes()
-
+export const metadata: Metadata = { title: 'Community rules' }
+export default function RulesPage() {
   return (
-    <PageShell>
-      <PageHeader
-        eyebrow="Competition"
-        title="Rules"
-        description="What is required of a match before it moves the ladder."
+    <PortalShell>
+      <PortalHeading
+        title="A fair world is worth protecting."
+        eyebrow="COMMUNITY & SURVIVAL"
+        description="Respect the community, protect private access, and follow the rules published by the server team."
       />
-
-      <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
-        <div className="space-y-8">
-          <section>
-            <h2 className="font-display text-2xl text-text-primary">Conduct</h2>
-            <ul className="mt-4 space-y-4">
-              {CONDUCT.map((rule) => (
-                <li key={rule.title}>
-                  <Card className="p-5">
-                    <h3 className="font-display text-lg text-text-primary">
-                      {rule.title}
-                    </h3>
-                    <p className="mt-1 max-w-prose text-sm text-text-secondary">
-                      {rule.detail}
-                    </p>
-                  </Card>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="font-display text-2xl text-text-primary">
-              How a match is verified
-            </h2>
-            <ol className="mt-4 space-y-3">
-              {[
-                'A player submits the result with a screenshot.',
-                `The named opponent confirms or disputes it. After ${OPPONENT_CONFIRMATION_WINDOW_HOURS} hours without a response, it escalates to an administrator anyway.`,
-                'An administrator reviews the evidence and either approves or rejects it. Rejection always carries a reason.',
-                'Only on approval do both ratings change, in a single transaction alongside the permanent rating history.',
-              ].map((step, index) => (
-                <li key={index} className="flex gap-3">
-                  <span className="tnum mt-0.5 shrink-0 font-display text-sm text-accent">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <p className="max-w-prose text-sm text-text-secondary">
-                    {step}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          <section>
-            <h2 className="font-display text-2xl text-text-primary">Rating</h2>
-            <div className="mt-4 space-y-3 text-sm text-text-secondary">
-              <p className="max-w-prose">
-                AREUS uses ELO. How much a result is worth depends on the gap
-                between the two players: beating someone far above you gains a
-                lot, beating someone far below you gains almost nothing.
-              </p>
-              <p className="max-w-prose">
-                Your first {PROVISIONAL_MATCH_THRESHOLD} matches in a gamemode
-                are provisional and move your rating roughly twice as fast, so a
-                new account reaches its real level quickly.
-              </p>
-              <p className="max-w-prose">
-                Rating is never created or destroyed between two established
-                players — whatever the winner gains, the loser loses.
-              </p>
-            </div>
-          </section>
+      <PortalPanel title="Private community">
+        <div className="space-y-4 p-5 text-sm text-text-secondary">
+          <p>
+            Server access is private. Keep connection details and member
+            information within approved channels.
+          </p>
+          <p>
+            Report suspected cheating, abuse or exploits privately to the
+            community team. Do not publish private member data.
+          </p>
+          <p>
+            These are website privacy guidelines. Detailed in-game conduct,
+            faction war and territory rules are awaiting owner confirmation.
+          </p>
         </div>
-
-        <aside>
-          <Card className="p-5">
-            <h2 className="font-display text-xl text-text-primary">
-              Gamemode rules
-            </h2>
-            <ul className="mt-4 space-y-4">
-              {gamemodes.map((mode) => (
-                <li key={mode.id} className="border-t border-line pt-4 first:border-0 first:pt-0">
-                  <GamemodeBadge
-                    name={mode.name}
-                    themeToken={mode.themeToken}
-                  />
-                  <p className="mt-2 text-sm text-text-secondary">
-                    {mode.rules}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </aside>
-      </div>
-    </PageShell>
+      </PortalPanel>
+      <PortalPanel title="Proposed Hardcore SMP mechanics">
+        <div className="p-5">
+          <p className="text-sm text-text-secondary">
+            The requested mechanics below are planned and operational status is
+            unverified. They are not represented as active server rules.
+          </p>
+          <ul className="mt-5 space-y-3">
+            {SMP_FEATURES.map(([name, detail]) => (
+              <li key={name} className="border-t border-line pt-3">
+                <h3 className="font-display text-lg">
+                  {name}{' '}
+                  <span className="text-xs text-text-secondary">· Planned</span>
+                </h3>
+                <p className="mt-2 text-sm text-text-secondary">{detail}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </PortalPanel>
+      <Link
+        className="inline-flex min-h-11 items-center text-sm text-accent-strong hover:underline"
+        href="/rules/pvp"
+      >
+        Legacy PvP match and gamemode rules ↗
+      </Link>
+    </PortalShell>
   )
 }

@@ -1,5 +1,23 @@
 # Architecture
 
+## Hardcore SMP frontend — 2026-10-14
+
+The public landing experience is now the private Hardcore SMP portal. New routes:
+`/minecraft`, `/leaderboard`, `/factions`, `/factions/[id]`, `/events`,
+`/events/[id]`, `/community`, and `/rules/pvp` (preserved legacy rules).
+`/players/[username]` accepts canonical UUID paths for verified SMP identities
+while retaining username profiles. Existing PvP routes and all account/admin
+services remain. See `SMP_REDESIGN.md` for the scoped audit and sitemap.
+
+SMP pages read `services/hardcore.ts`; public interfaces and pure scoring live in
+`domain/hardcore.ts`. No SMP persistence adapter exists yet: pages explicitly show
+unavailable records. The application never maps old PvP wins/losses to Minecraft
+kills/deaths. This boundary is recorded in ADR 0002. `SMP_INTEGRATION.md` specifies
+the proposed additive persistence and server-to-server integration work.
+
+The historical overview below describes the retained PvP subsystem; dated
+limitations should be checked against current code before relying on them.
+
 > Describes what the code does today. Last verified: 2026-08-22.
 
 ## Overview

@@ -1,4 +1,5 @@
 @import './tokens.css';
+@import './hardcore.css';
 
 @tailwind base;
 @tailwind components;
@@ -29,16 +30,13 @@
     overflow-x: hidden;
   }
 
-  /* Bebas Neue ships a single weight and has no lowercase — it draws caps at
-     every size. Asking it for 600 makes the browser synthesise a bold, which
-     smears the condensed stems, so the weight is pinned here and the utility
-     classes that used to set it have been stripped from the codebase. */
+  /* Shared heading rhythm; both SMP and retained legacy pages use the loaded display face. */
   h1,
   h2,
   h3,
   h4 {
     font-family: var(--font-display);
-    font-weight: 400;
+    font-weight: 600;
     line-height: 1.1;
     letter-spacing: var(--tracking-display);
     margin: 0;

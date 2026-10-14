@@ -1,5 +1,12 @@
 # API
 
+## SMP integration status — 2026-10-14
+
+No public SMP or ingestion endpoint has been added. New pages read a server-only
+unavailable snapshot from `services/hardcore.ts`. Existing actions and handlers
+are preserved. The proposed authenticated plugin ingestion and public projection
+requirements in `SMP_INTEGRATION.md` are a future contract, not a deployed API.
+
 > Describes what exists today. Last verified: 2026-08-22.
 
 ## Shape of this application

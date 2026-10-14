@@ -7,6 +7,20 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Hardcore SMP frontend — 2026-10-14
+
+- Replaced the PvP homepage with a dark blue Hardcore SMP season dashboard,
+  preserving the original AREUS logo and existing account/admin workflows.
+- Added mechanics, survival leaderboard, faction directory/rankings and details,
+  event calendar/details and community pages; preserved legacy PvP routes and
+  moved the previous rules content to `/rules/pvp`.
+- Added Inter/Space Grotesk, a local voxel landscape, responsive navigation,
+  skeletons and explicit unavailable states. No mock players or live totals.
+- Added UUID-capable SMP profile layouts without assuming username-to-UUID links.
+- Added tested proposed normalized faction scoring and zero-death-safe K/D.
+- Prevented legacy profile metadata from naming unapproved accounts.
+- Documented integration requirements; no database migration or deployment.
+
 Initial implementation. Nothing has been released or deployed.
 
 ### Added

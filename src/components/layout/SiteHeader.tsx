@@ -10,6 +10,7 @@ import { hasAtLeastRole } from '@/lib/auth/roles'
 import { cn } from '@/lib/cn'
 import { PlayerAvatar } from '@/components/domain/PlayerAvatar'
 import { Logo } from '@/components/layout/Logo'
+import { PUBLIC_NAVIGATION } from '@/domain/navigation'
 
 /**
  * Site header.
@@ -28,18 +29,16 @@ interface NavLink {
   label: string
 }
 
-const publicLinks: NavLink[] = [
-  { href: '/players', label: 'Players' },
-  { href: '/gamemodes', label: 'Gamemodes' },
-  { href: '/leaderboards', label: 'Leaderboards' },
-  { href: '/rules', label: 'Rules' },
-]
+const publicLinks: readonly NavLink[] = PUBLIC_NAVIGATION
 
 export function SiteHeader({
   user,
   unreadCount,
 }: {
-  user: Pick<User, 'id' | 'username' | 'minecraftUsername' | 'role' | 'status'> | null
+  user: Pick<
+    User,
+    'id' | 'username' | 'minecraftUsername' | 'role' | 'status'
+  > | null
   unreadCount: number
 }) {
   const pathname = usePathname()
@@ -113,7 +112,7 @@ export function SiteHeader({
        reference — they turn the bar into a measured instrument strip rather
        than a floating row of links. */
     <header className="sticky top-0 z-40 border-b border-line bg-surface-base/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-content items-center gap-4 px-4 md:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-content items-center gap-4 px-4 xl:px-6 lg:px-8">
         <Link href="/" className="text-text-primary">
           {/* 32px — the default, and the tallest ramp step that still leaves
               breathing room inside the header bar. */}
@@ -122,10 +121,10 @@ export function SiteHeader({
 
         <span
           aria-hidden="true"
-          className="hidden h-14 w-px shrink-0 bg-line md:block"
+          className="hidden h-14 w-px shrink-0 bg-line xl:block"
         />
 
-        <nav aria-label="Main" className="hidden md:block">
+        <nav aria-label="Main" className="hidden xl:block">
           <ul className="flex items-center gap-1">
             {links.map((link) => (
               <li key={link.href}>
@@ -137,10 +136,10 @@ export function SiteHeader({
 
         <span
           aria-hidden="true"
-          className="ml-auto hidden h-14 w-px shrink-0 bg-line md:block"
+          className="ml-auto hidden h-14 w-px shrink-0 bg-line xl:block"
         />
 
-        <div className="flex items-center gap-2 md:ml-0 ml-auto">
+        <div className="flex items-center gap-2 xl:ml-0 ml-auto">
           {user ? (
             <>
               <Link
@@ -149,7 +148,8 @@ export function SiteHeader({
               >
                 <span aria-hidden="true">◎</span>
                 <span className="sr-only">
-                  Notifications{unreadCount > 0 ? `, ${unreadCount} unread` : ''}
+                  Notifications
+                  {unreadCount > 0 ? `, ${unreadCount} unread` : ''}
                 </span>
                 {unreadCount > 0 ? (
                   <span
@@ -184,7 +184,7 @@ export function SiteHeader({
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
             aria-controls="mobile-nav"
-            className="grid h-11 w-11 place-items-center rounded-md border border-line text-text-primary transition-colors duration-instant hover:border-line-strong md:hidden"
+            className="grid h-11 w-11 place-items-center rounded-md border border-line text-text-primary transition-colors duration-instant hover:border-line-strong xl:hidden"
           >
             <span aria-hidden="true">{open ? '✕' : '☰'}</span>
             <span className="sr-only">{open ? 'Close menu' : 'Open menu'}</span>
@@ -195,14 +195,14 @@ export function SiteHeader({
       {open ? (
         <>
           <div
-            className="fixed inset-0 top-14 z-30 bg-surface-base/80 md:hidden"
+            className="fixed inset-0 top-14 z-30 bg-surface-base/80 xl:hidden"
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
           <div
             ref={drawerRef}
             id="mobile-nav"
-            className="fixed inset-x-0 top-14 z-40 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-line bg-surface-raised md:hidden"
+            className="fixed inset-x-0 top-14 z-40 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-line bg-surface-raised xl:hidden"
           >
             <nav aria-label="Mobile">
               <ul className="divide-y divide-line">
@@ -212,12 +212,18 @@ export function SiteHeader({
                       href={link.href}
                       className={cn(
                         'flex min-h-12 items-center px-4 text-base transition-colors duration-instant',
-                        pathname.startsWith(link.href)
+                        pathname === link.href ||
+                          (link.href !== '/' &&
+                            pathname.startsWith(`${link.href}/`))
                           ? 'bg-surface-overlay text-accent'
                           : 'text-text-primary hover:bg-surface-overlay',
                       )}
                       aria-current={
-                        pathname.startsWith(link.href) ? 'page' : undefined
+                        pathname === link.href ||
+                        (link.href !== '/' &&
+                          pathname.startsWith(`${link.href}/`))
+                          ? 'page'
+                          : undefined
                       }
                     >
                       {link.label}
