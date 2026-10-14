@@ -1,5 +1,16 @@
 # Security
 
+## SMP frontend review — 2026-10-14
+
+New public surfaces are read-only and use explicit public telemetry DTOs; the
+current service supplies no records. No connection configuration, integration
+tokens, private member fields, new public mutation, or auth bypass was introduced.
+Existing account, administration and rate-limit controls remain unchanged.
+Legacy player metadata now follows the same APPROVED visibility check as the
+profile body, preventing names/ratings of unapproved accounts from leaking in
+page metadata. Live UUID linkage must additionally enforce publication policy
+when the real adapter is implemented. See `SMP_INTEGRATION.md`.
+
 > Describes controls that exist in the code today, each verified by the suite
 > named against it. Last verified: 2026-08-22.
 

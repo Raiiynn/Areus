@@ -1,5 +1,12 @@
 # Database
 
+## SMP migration status — 2026-10-14
+
+The redesign does not change the Prisma schema or execute a migration. Existing
+PvP accounts, matches and ratings are retained. There are no Minecraft UUID,
+season, faction or death-event tables yet. See `SMP_INTEGRATION.md` for proposed
+additive entities and safe rollout; unavailable public values are not zeros.
+
 > Describes the schema as implemented in `prisma/schema.prisma`.
 > Last verified: 2026-09-07.
 

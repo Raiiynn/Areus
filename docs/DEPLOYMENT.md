@@ -1,5 +1,15 @@
 # Deployment
 
+## SMP frontend verification — 2026-10-14
+
+No deployment performed and no new environment variable is required. SMP telemetry
+remains intentionally unavailable. Normal build is still `npm run build`.
+In this Windows workspace Prisma engine generation failed with EPERM rename;
+Next compilation succeeded using the already generated client and separate
+`NEXT_DIST_DIR=.next-smp-build`. Do not treat this workaround as proof that fresh
+Prisma generation or a clean deployment environment is verified. Do not stop
+unrelated Node processes or delete the client engine to work around file locks.
+
 > Last verified: 2026-09-07.
 >
 > The application has not been deployed from this workspace. Production
