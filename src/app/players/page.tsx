@@ -1,192 +1,147 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-
+import {
+  PortalShell,
+  PortalHeading,
+  PortalPanel,
+  DataNotice,
+  Unavailable,
+} from '@/components/hardcore/Portal'
 import { PlayerAvatar } from '@/components/domain/PlayerAvatar'
-import { RatingValue } from '@/components/domain/RatingValue'
-import { TierBadge } from '@/components/domain/TierBadge'
-import { GamemodeBadge } from '@/components/domain/GamemodeBadge'
-import { PageHeader, PageShell, Pagination } from '@/components/layout/PageHeader'
-import { Card } from '@/components/ui/Card'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { Pagination } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
-import { Input, Select } from '@/components/ui/Field'
-import { resolveTier } from '@/domain/tiers'
-import { listActiveGamemodes, listTiers } from '@/services/gamemodes'
 import { listPlayers } from '@/services/players'
 import { playerFiltersSchema } from '@/lib/validation/schemas'
+import { getHardcoreSnapshot } from '@/services/hardcore'
+import { formatDuration } from '@/domain/hardcore'
 
 export const dynamic = 'force-dynamic'
-
 export const metadata: Metadata = {
   title: 'Players',
-  description: 'Every approved AREUS competitor.',
+  description: 'The AREUS community and verified Hardcore SMP survivors.',
 }
-
 export default async function PlayersPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | undefined>>
 }) {
   const raw = await searchParams
-
-  // Query strings are user input like any other: parsed, not trusted. An
-  // unparseable filter falls back to defaults rather than throwing.
-  const parsed = playerFiltersSchema.safeParse(raw)
-  const filters = parsed.success ? parsed.data : {}
-
-  const [result, gamemodes, tiers] = await Promise.all([
+  const parsed = playerFiltersSchema.safeParse({
+    q: raw.q,
+    page: raw.page,
+    sort: 'username',
+  })
+  const filters = parsed.success ? parsed.data : { sort: 'username' as const }
+  const [snapshot, result] = await Promise.all([
+    getHardcoreSnapshot(),
     listPlayers(filters),
-    listActiveGamemodes(),
-    listTiers(),
   ])
-
+  const survivors = snapshot.players.filter((player) =>
+    player.username.toLowerCase().includes((filters.q ?? '').toLowerCase()),
+  )
   return (
-    <PageShell>
-      <PageHeader
-        eyebrow="Roster"
-        title="Players"
-        description="Everyone approved to compete on AREUS."
+    <PortalShell>
+      <PortalHeading
+        title="Meet the survivors."
+        eyebrow="THE AREUS ROSTER"
+        description="Explore the people behind the stories. Verified Minecraft profiles use stable UUIDs; existing community accounts remain accessible."
       />
-
-      {/* GET form: filters end up in the URL, so a filtered roster is
-          shareable and the back button behaves (FULL_BUILD §889). */}
+      <DataNotice />
       <form
         method="get"
-        className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]"
+        className="flex flex-col gap-3 sm:flex-row sm:items-end"
       >
-        <div>
-          <label htmlFor="q" className="sr-only">
-            Search by username
-          </label>
-          <Input
-            id="q"
+        <label className="flex flex-1 flex-col gap-2 text-xs text-text-secondary">
+          Search player username
+          <input
             name="q"
             type="search"
-            placeholder="Search username…"
+            maxLength={50}
             defaultValue={filters.q ?? ''}
+            className="smp-filter"
+            placeholder="Search the community…"
           />
-        </div>
-
-        <div>
-          <label htmlFor="gamemode" className="sr-only">
-            Filter by gamemode
-          </label>
-          <Select
-            id="gamemode"
-            name="gamemode"
-            defaultValue={filters.gamemode ?? ''}
-          >
-            <option value="">All gamemodes</option>
-            {gamemodes.map((mode) => (
-              <option key={mode.id} value={mode.slug}>
-                {mode.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        <div>
-          <label htmlFor="sort" className="sr-only">
-            Sort by
-          </label>
-          <Select id="sort" name="sort" defaultValue={filters.sort ?? 'rating'}>
-            <option value="rating">Highest rating</option>
-            <option value="matches">Most matches</option>
-            <option value="username">Username</option>
-          </Select>
-        </div>
-
-        <Button type="submit" variant="ghost">
-          Apply
-        </Button>
+        </label>
+        <Button type="submit">Search players</Button>
+        <Link
+          href="/players"
+          className="inline-flex min-h-11 items-center justify-center px-4 text-sm text-accent-strong"
+        >
+          Clear search
+        </Link>
       </form>
-
-      <Card>
-        {result.players.length === 0 ? (
-          <EmptyState
-            title="No players match those filters"
-            description={
-              filters.q
-                ? `Nothing found for “${filters.q}”. Try a shorter search.`
-                : 'No approved players yet. Registrations appear here once an administrator approves them.'
-            }
-            action={
-              filters.q || filters.gamemode ? (
+      <PortalPanel title="Verified SMP identities">
+        {survivors.length ? (
+          <ul className="divide-y divide-line">
+            {survivors.map((player) => (
+              <li key={player.uuid}>
                 <Link
-                  href="/players"
-                  className="text-sm text-accent hover:text-accent-strong"
+                  href={`/players/${player.uuid}`}
+                  className="flex min-h-11 items-center gap-4 p-5"
                 >
-                  Clear filters
+                  <PlayerAvatar username={player.uuid} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate">{player.username}</p>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {player.edition ?? 'Edition unverified'} ·{' '}
+                      {player.factionName ?? 'Unaffiliated'}
+                    </p>
+                  </div>
+                  <span className="text-sm text-accent-strong">
+                    {formatDuration(player.survivalMinutes)}
+                  </span>
                 </Link>
-              ) : null
-            }
-          />
+              </li>
+            ))}
+          </ul>
         ) : (
-          <>
-            <ul className="divide-y divide-line">
-              {result.players.map((player) => (
-                <li key={player.id}>
-                  <Link
-                    href={`/players/${player.username}`}
-                    className="flex items-center gap-3 px-4 py-3 transition-colors duration-instant hover:bg-surface-overlay"
-                  >
-                    <PlayerAvatar
-                      username={player.minecraftUsername}
-                      size={36}
-                    />
-
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-text-primary">
-                        {player.username}
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        {player.bestGamemode ? (
-                          <GamemodeBadge
-                            name={player.bestGamemode.name}
-                            themeToken="mode-default"
-                          />
-                        ) : (
-                          <span className="text-xs text-text-muted">
-                            No ranked gamemode yet
-                          </span>
-                        )}
-                        <span className="tnum text-xs text-text-muted">
-                          {player.totalMatches}{' '}
-                          {player.totalMatches === 1 ? 'match' : 'matches'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-2">
-                      <RatingValue value={player.bestRating} size="sm" />
-                      <TierBadge
-                        tier={
-                          player.bestRating === null
-                            ? null
-                            : resolveTier(player.bestRating, tiers)
-                        }
-                        size="sm"
-                      />
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <Pagination
-              page={result.page}
-              pageCount={result.pageCount}
-              total={result.total}
-              basePath="/players"
-              searchParams={{
-                q: filters.q,
-                gamemode: filters.gamemode,
-                sort: filters.sort,
-              }}
-            />
-          </>
+          <Unavailable
+            title="Verified survivor profiles are on the way"
+            description="Community usernames cannot establish Java or Bedrock identity. SMP profiles will appear once Minecraft UUIDs are verified."
+          />
         )}
-      </Card>
-    </PageShell>
+      </PortalPanel>
+      <PortalPanel title="Approved community accounts">
+        <p className="border-b border-line px-5 py-4 text-sm text-text-secondary">
+          These are genuine approved website accounts. Minecraft UUIDs, editions
+          and survival statistics are not yet linked.
+        </p>
+        {result.players.length ? (
+          <ul className="divide-y divide-line">
+            {result.players.map((player) => (
+              <li key={player.id}>
+                <Link
+                  href={`/players/${encodeURIComponent(player.username)}`}
+                  className="flex min-h-11 items-center gap-4 p-5 hover:bg-surface-overlay"
+                >
+                  <PlayerAvatar username={player.minecraftUsername} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate">{player.username}</p>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      UUID unverified · Community account
+                    </p>
+                  </div>
+                  <span aria-hidden="true" className="text-accent-strong">
+                    ↗
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Unavailable
+            title="No community accounts found"
+            description="Try a different search. Accounts appear here after administrator approval."
+          />
+        )}
+        <Pagination
+          page={result.page}
+          pageCount={result.pageCount}
+          total={result.total}
+          basePath="/players"
+          searchParams={{ q: filters.q }}
+        />
+      </PortalPanel>
+    </PortalShell>
   )
 }

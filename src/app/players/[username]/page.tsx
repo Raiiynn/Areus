@@ -11,6 +11,10 @@ import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Badge } from '@/components/ui/Badge'
 import { USER_STATUSES } from '@/domain/constants'
+import { isMinecraftUuid } from '@/domain/hardcore'
+import { getHardcoreSnapshot } from '@/services/hardcore'
+import { SurvivorProfile } from '@/components/hardcore/SurvivorProfile'
+import { DataNotice } from '@/components/hardcore/Portal'
 import { resolveTier, winRate } from '@/domain/tiers'
 import { listTiers } from '@/services/gamemodes'
 import {
@@ -27,9 +31,17 @@ export async function generateMetadata({
   params: Promise<{ username: string }>
 }): Promise<Metadata> {
   const { username } = await params
+  if (isMinecraftUuid(username)) {
+    const snapshot = await getHardcoreSnapshot()
+    const survivor = snapshot.players.find(
+      (player) => player.uuid.toLowerCase() === username.toLowerCase(),
+    )
+    return { title: survivor?.username ?? 'Player not found' }
+  }
   const player = await getPlayerByUsername(username)
 
-  if (!player) return { title: 'Player not found' }
+  if (!player || player.status !== USER_STATUSES.APPROVED)
+    return { title: 'Player not found' }
 
   const best = player.ratings[0]
 
@@ -53,6 +65,21 @@ export default async function PlayerProfilePage({
   params: Promise<{ username: string }>
 }) {
   const { username } = await params
+  if (isMinecraftUuid(username)) {
+    const snapshot = await getHardcoreSnapshot()
+    const survivor = snapshot.players.find(
+      (player) => player.uuid.toLowerCase() === username.toLowerCase(),
+    )
+    if (!survivor) notFound()
+    return (
+      <SurvivorProfile
+        player={survivor}
+        deaths={snapshot.deaths.filter(
+          (death) => death.playerUuid === survivor.uuid,
+        )}
+      />
+    )
+  }
   const player = await getPlayerByUsername(username)
 
   // A suspended or rejected account is not a public profile.
@@ -71,6 +98,13 @@ export default async function PlayerProfilePage({
 
   return (
     <PageShell>
+      <div className="mb-6">
+        <DataNotice />
+        <p className="mt-3 text-sm text-text-secondary">
+          Community account · Minecraft UUID and edition unverified. Statistics
+          below are legacy reviewed PvP matches, not SMP kills or deaths.
+        </p>
+      </div>
       {/* Identity. On mobile this stacks in the priority order from
           FULL_BUILD §656: avatar, username, rating, tier. */}
       <header className="mb-8 border-b border-line pb-8">
