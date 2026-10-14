@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { Logo } from '@/components/layout/Logo'
+import { PUBLIC_NAVIGATION } from '@/domain/navigation'
 
 export function SiteFooter() {
   return (
@@ -9,23 +10,18 @@ export function SiteFooter() {
         <div>
           <Logo className="text-text-primary" markClassName="h-8 w-auto" />
           <p className="mt-1 max-w-prose text-sm text-text-secondary">
-            Competitive Minecraft PvP rankings. Every rating change is backed by
-            a reviewed match.
+            A private Minecraft Hardcore SMP community. Survive. Conquer.
+            Dominate.
           </p>
         </div>
 
         <nav aria-label="Footer">
           <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            {[
-              { href: '/players', label: 'Players' },
-              { href: '/gamemodes', label: 'Gamemodes' },
-              { href: '/leaderboards', label: 'Leaderboards' },
-              { href: '/rules', label: 'Rules' },
-            ].map((link) => (
+            {PUBLIC_NAVIGATION.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="text-text-secondary transition-colors duration-instant hover:text-text-primary"
+                  className="inline-flex min-h-11 items-center text-text-secondary transition-colors duration-instant hover:text-text-primary"
                 >
                   {link.label}
                 </Link>
